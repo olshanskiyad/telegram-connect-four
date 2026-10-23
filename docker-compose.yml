@@ -1,0 +1,41 @@
+# Запуск: docker compose up -d --build, затем http://localhost:3000
+# Настройки берутся из .env (cp .env.example .env). Без .env работает гостевой режим.
+# Порты открыты только на этом компьютере (127.0.0.1). Чтобы открыть игру с других устройств,
+# уберите "127.0.0.1:" перед портом (и помните, что гостевой режим без ограничений).
+services:
+  app:
+    build: .
+    image: connect-four
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_AUTH_MAX_AGE: ${TELEGRAM_AUTH_MAX_AGE:-86400}
+      GUEST_MODE: ${GUEST_MODE:-}
+      GUEST_SECRET: ${GUEST_SECRET:-}
+      # Пустое значение в .env сохраняется (за nginx), а если переменной нет, берётся локальный адрес
+      WS_PUBLIC_URL: ${WS_PUBLIC_URL-ws://localhost:3002}
+      DATA_DIR: /app/data
+    volumes:
+      - game-data:/app/data
+
+  ws:
+    build: .
+    image: connect-four
+    init: true
+    restart: unless-stopped
+    command: ["node", "ws-server.mjs"]
+    ports:
+      - "127.0.0.1:3002:3002"
+    environment:
+      WS_PORT: "3002"
+      WS_HOST: 0.0.0.0
+      DATA_DIR: /app/data
+    volumes:
+      - game-data:/app/data:ro
+
+volumes:
+  game-data:

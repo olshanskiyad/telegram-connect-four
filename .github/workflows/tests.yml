@@ -1,0 +1,21 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# Тесты, проверка типов и сборка идут внутри Docker-образов: раннеру нужен только Docker.
+# Интернет, Telegram и база данных тестам не нужны.
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target test -t connect-four-test .
+      - run: docker run --rm connect-four-test npm test
+      - run: docker run --rm connect-four-test npm run typecheck
+      - run: docker build -t connect-four .
